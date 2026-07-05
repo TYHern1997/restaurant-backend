@@ -12,23 +12,27 @@ app.use(cors());
 app.use(express.json())
 
 const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-})
-
+    connectionString: process.env.DATABASE_URL || "",
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 async function getPostgresVersion() {
-    const client = await pool.connect();
+    // Only try to connect if we actually have a URL string
+    if (!process.env.DATABASE_URL) {
+        console.log("No DATABASE_URL found. Skipping connection check during build.");
+        return;
+    }
+
     try {
-        const response = await client.query("SELECT version()")
+        const client = await pool.connect();
+        const response = await client.query("SELECT version()");
         console.log(response.rows[0]);
-    } finally {
-        if (client) client.release()
+        if (client) client.release();
+    } catch (err) {
+        console.error("Database connection failed:", err.message);
     }
 }
 
-getPostgresVersion()
+getPostgresVersion();
 
 app.post('/bookings', async (req, res) => {
     const client = await pool.connect()
