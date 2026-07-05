@@ -49,6 +49,12 @@ app.get('/bookings', async (req, res) => {
     const client = await pool.connect();
     try {
         const token = req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ error: "Access denied. No token provided." });
+        }
+
+        // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const result = await client.query(
@@ -58,6 +64,15 @@ app.get('/bookings', async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         console.error(error);
+
+        // Catch JWT errors separately and send a 401 instead of a 500 crash
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: "Your session has expired. Please log in again." });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Invalid token authentication failed." });
+        }
+
         res.status(500).json({ error: "Internal server error" });
     } finally {
         if (client) client.release();
