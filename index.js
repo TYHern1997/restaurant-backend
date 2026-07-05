@@ -3,7 +3,7 @@ let path = require("path");
 const cors = require("cors");
 const { Pool } = require("pg");
 require("dotenv").config();
-// const { DATABASE_URL } = process.env;
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -202,7 +202,7 @@ app.post('/login', async (req, res) => {
 
 app.post('/signup', async (req, res) => {
     const client = await pool.connect()
-    const { email, password } = req.body
+    const { email, password, first_name, last_name, birthday, phone_number } = req.body
 
     try {
 
@@ -211,11 +211,24 @@ app.post('/signup', async (req, res) => {
         }
 
         const hashPass = await bcrypt.hash(password, 10)
-        const result = await client.query(`INSERT INTO users(email, password) VALUES ($1, $2) RETURNING id, email`, [email, hashPass])
+        const result = await client.query(`INSERT INTO users(email, password, first_name, last_name, birthday, phone_number) 
+            VALUES ($1, $2, $3, $4, $5, $6) 
+            RETURNING id, email, first_name, last_name, birthday, phone_number`, [
+            email,
+            hashPass,
+            first_name || null,
+            last_name || null,
+            birthday || null,
+            phone_number || null
+        ])
 
         res.json(result.rows[0])
     } catch (error) {
         console.error(error);
+
+        if (error.code === '23505') {
+            return res.status(400).json({ error: "An account with this email already exists." });
+        }
         res.status(500).json({ error: "Internal server error" });
     } finally {
         if (client) client.release();
