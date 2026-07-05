@@ -34,6 +34,8 @@ async function getPostgresVersion() {
 
 getPostgresVersion();
 
+
+
 app.post('/bookings', async (req, res) => {
     const client = await pool.connect()
     const { title, description, date, time, phone_number, email, user_id, restaurant_id } = req.body
@@ -172,7 +174,8 @@ app.post('/login', async (req, res) => {
         const token = jwt.sign(
             {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                role: user.role          //  include role
             },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
@@ -253,25 +256,73 @@ app.post('/restaurants', async (req, res) => {
     }
 })
 
-app.delete('/restaurants/:id', async (req, res) => {
-    const client = await pool.connect()
-    try {
-        const { id } = req.params
-        const result = await client.query(`DELETE FROM restaurants WHERE id=$1 RETURNING *`, [id])
+// app.delete('/restaurants/:id', async (req, res) => {
+//     const client = await pool.connect()
+//     try {
+//         const { id } = req.params
+//         const result = await client.query(`DELETE FROM restaurants WHERE id=$1 RETURNING *`, [id])
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: "Restaurant not found" });
+//         if (result.rows.length === 0) {
+//             return res.status(404).json({ error: "Restaurant not found" });
+//         }
+//         res.json({ "status": "success", "message": "bookings successfully deleted" })
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: "Internal server error" });
+//     } finally {
+//         if (client) client.release();
+//     }
+// })
+
+
+app.get('/admin/users', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access only' });
         }
-        res.json({ "status": "success", "message": "bookings successfully deleted" })
+
+        const result = await client.query('SELECT id, email, role FROM users');
+        res.json(result.rows);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal server error" });
     } finally {
         if (client) client.release();
     }
-})
+});
 
+app.delete('/restaurants/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access only' });
+        }
+
+        const { id } = req.params;
+        const result = await client.query(
+            'DELETE FROM restaurants WHERE id=$1 RETURNING *',
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Restaurant not found' });
+        }
+
+        res.json({ message: 'Restaurant deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+});
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname + "/index.html"));
