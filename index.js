@@ -94,6 +94,8 @@ app.get('/bookings/:id', async (req, res) => {
 })
 
 app.put('/bookings/:id', async (req, res) => {
+    console.log('PUT /bookings hit, id:', req.params.id);
+    console.log('body:', req.body);
     const client = await pool.connect()
     const { id } = req.params
     const updatedData = req.body
@@ -107,7 +109,7 @@ app.put('/bookings/:id', async (req, res) => {
             email=$6, 
             user_id=$7, 
             restaurant_id=$8 
-            WHERE id = $9 RETURNING*`)
+            WHERE id = $9 RETURNING *`)
         const queryData = [
             updatedData.title,
             updatedData.description,
@@ -175,7 +177,7 @@ app.post('/login', async (req, res) => {
             {
                 id: user.id,
                 email: user.email,
-                role: user.role          //  include role
+                role: user.role    // added new role
             },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
