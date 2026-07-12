@@ -348,6 +348,25 @@ app.put('/users/:id', async (req, res) => {
     }
 });
 
+app.get('/users/:id', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const { id } = req.params
+        const result = await client.query(
+            `SELECT id, email, role, profile_pic FROM users WHERE id = $1`, [id]
+        )
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" })
+        }
+        res.json(result.rows[0])
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ error: "Internal server error" })
+    } finally {
+        if (client) client.release();
+    }
+})
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname + "/index.html"));
 });
