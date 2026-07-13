@@ -332,7 +332,7 @@ app.put('/users/:id', async (req, res) => {
         const { id } = req.params
         const { profile_pic } = req.body
 
-        const result = await client.query(`UPDATE users Set provile_pic = $1 WHERE id = $2 RETURNING id, email, profile_pic`,
+        const result = await client.query(`UPDATE users Set profile_pic = $1 WHERE id = $2 RETURNING id, email, profile_pic`,
             [profile_pic, id]
         )
 
