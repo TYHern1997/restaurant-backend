@@ -93,6 +93,27 @@ app.get('/bookings/:id', async (req, res) => {
     }
 })
 
+app.put('/bookings/:id/visited', async (req, res) => {
+
+    const client = await pool.connect();
+    try {
+        const { id } = req.params;
+        const result = await client.query(
+            'UPDATE bookings SET visited = TRUE WHERE id = $1 RETURNING *',
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 app.put('/bookings/:id', async (req, res) => {
     console.log('PUT /bookings hit, id:', req.params.id);
     console.log('body:', req.body);
@@ -362,6 +383,60 @@ app.get('/users/:id', async (req, res) => {
     } catch (error) {
         console.error(error)
         res.status(500).json({ error: "Internal server error" })
+    } finally {
+        if (client) client.release();
+    }
+})
+
+
+
+app.post('/reviews', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const { booking_id, user_id, restaurant_id, rating, comment } = req.body;
+        const result = await client.query(
+            'INSERT INTO reviews (booking_id, user_id, restaurant_id, rating, comment)  VALUES ($1, $2, $3, $4, $5) RETURNING *', [booking_id, user_id, restaurant_id, rating, comment]
+        )
+        res.json(result.rows[0])
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
+app.get('/reviews/user/:user_id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { user_id } = req.params;
+        const result = await client.query(
+            `SELECT reviews.*, restaurants.name as restaurant_name, restaurants.location as restaurant_location
+       FROM reviews
+       JOIN restaurants ON reviews.restaurant_id = restaurants.id
+       WHERE reviews.user_id = $1
+       ORDER BY reviews.created_at DESC`,
+            [user_id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.put('/reviews/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { id } = req.params
+        const { rating, comment } = req.body
+        const result = await client.query('UPDATE reviews SET rating= $1, comment = $2 WHERE id = $3 RETURNING *', [rating, comment, id])
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
     } finally {
         if (client) client.release();
     }
