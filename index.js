@@ -264,11 +264,11 @@ app.get('/restaurants', async (req, res) => {
 
 app.post('/restaurants', async (req, res) => {
     const client = await pool.connect()
-    const { name, cuisine_type, capacity, location } = req.body
+    const { name, cuisine_type, capacity, location, menu_url } = req.body
     try {
         const result = await client.query(
-            'INSERT INTO restaurants (name, cuisine_type, capacity, location) VALUES($1, $2, $3, $4) RETURNING *',
-            [name, cuisine_type, capacity, location]
+            'INSERT INTO restaurants (name, cuisine_type, capacity, location, menu_url) VALUES($1, $2, $3, $4, $5) RETURNING *',
+            [name, cuisine_type, capacity, location, menu_url]
         )
         res.json(result.rows[0])
     } catch (error) {
