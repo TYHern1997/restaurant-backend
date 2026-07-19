@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { decode } = require("punycode");
 
 let app = express();
 app.use(cors());
@@ -271,6 +272,38 @@ app.post('/restaurants', async (req, res) => {
             [name, cuisine_type, capacity, location, menu_url]
         )
         res.json(result.rows[0])
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
+app.put('/restaurants/:id', async (req, res) => {
+    const client = await pool.connect()
+
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin Access only' })
+        }
+
+        const { name, cuisine_type, capacity, location, menu_url } = req.body
+        const { id } = req.params
+
+
+        const result = await client.query(
+            `UPDATE restaurants SET name= $1, cuisine_type=$2, capacity=$3, location=$4, menu_url=$5 WHERE id = $6 RETURNING*`,
+            [name, cuisine_type, capacity, location, menu_url, id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Restaurant not found' })
+        }
+        res.json(result.rows[0]);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal server error" });
