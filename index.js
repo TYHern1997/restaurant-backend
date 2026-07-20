@@ -7,6 +7,7 @@ require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { decode } = require("punycode");
+const { json } = require("stream/consumers");
 
 let app = express();
 app.use(cors());
@@ -266,10 +267,26 @@ app.get('/restaurants', async (req, res) => {
 app.post('/restaurants', async (req, res) => {
     const client = await pool.connect()
     const { name, cuisine_type, capacity, location, menu_url } = req.body
+
+    const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+        params: {
+            q: location,
+            format: 'json',
+            limit: 1
+        },
+        headers: {
+            'User-Agent': 'SigmaServe/1.0'
+        }
+    })
+
+    const lat = geoRes.data[0]?.lat || null
+    const lng = geoRes.data[0]?.lon || null
+
+
     try {
         const result = await client.query(
-            'INSERT INTO restaurants (name, cuisine_type, capacity, location, menu_url) VALUES($1, $2, $3, $4, $5) RETURNING *',
-            [name, cuisine_type, capacity, location, menu_url]
+            'INSERT INTO restaurants (name, cuisine_type, capacity, location,lat,lng, menu_url) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [name, cuisine_type, capacity, location, menu_url, lat, lng]
         )
         res.json(result.rows[0])
     } catch (error) {
@@ -279,6 +296,8 @@ app.post('/restaurants', async (req, res) => {
         if (client) client.release();
     }
 })
+
+
 
 app.put('/restaurants/:id', async (req, res) => {
     const client = await pool.connect()
@@ -294,10 +313,25 @@ app.put('/restaurants/:id', async (req, res) => {
         const { name, cuisine_type, capacity, location, menu_url } = req.body
         const { id } = req.params
 
+        const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+            params: {
+                q: location,
+                format: 'json',
+                limit: 1
+            },
+            headers: {
+                'User-Agent': 'SigmaServe/1.0'
+            }
+        })
+
+        const lat = geoRes.data[0]?.lat || null
+        const lng = geoRes.data[0]?.lon || null
+
+
 
         const result = await client.query(
-            `UPDATE restaurants SET name= $1, cuisine_type=$2, capacity=$3, location=$4, menu_url=$5 WHERE id = $6 RETURNING*`,
-            [name, cuisine_type, capacity, location, menu_url, id]
+            `UPDATE restaurants SET name= $1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7 WHERE id = $8 RETURNING*`,
+            [name, cuisine_type, capacity, location, lat, lng, menu_url, id]
         )
 
         if (result.rows.length === 0) {
@@ -474,6 +508,7 @@ app.put('/reviews/:id', async (req, res) => {
         if (client) client.release();
     }
 })
+
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname + "/index.html"));
