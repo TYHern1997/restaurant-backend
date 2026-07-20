@@ -267,27 +267,28 @@ app.get('/restaurants', async (req, res) => {
 
 app.post('/restaurants', async (req, res) => {
     const client = await pool.connect()
-    const { name, cuisine_type, capacity, location, menu_url } = req.body
-
-    const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
-        params: {
-            q: location,
-            format: 'json',
-            limit: 1
-        },
-        headers: {
-            'User-Agent': 'SigmaServe/1.0'
-        }
-    })
-
-    const lat = geoRes.data[0]?.lat || null
-    const lng = geoRes.data[0]?.lon || null
-
-
     try {
+
+        const { name, cuisine_type, capacity, location, menu_url } = req.body
+
+        const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+            params: {
+                q: location,
+                format: 'json',
+                limit: 1
+            },
+            headers: {
+                'User-Agent': 'SigmaServe/1.0'
+            }
+        })
+
+        const lat = geoRes.data[0]?.lat || null
+        const lng = geoRes.data[0]?.lon || null
+
+
         const result = await client.query(
             'INSERT INTO restaurants (name, cuisine_type, capacity, location,lat,lng, menu_url) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, cuisine_type, capacity, location, menu_url, lat, lng]
+            [name, cuisine_type, capacity, location, lat, lng, menu_url]
         )
         res.json(result.rows[0])
     } catch (error) {
