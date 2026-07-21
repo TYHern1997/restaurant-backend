@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const { decode } = require("punycode");
 const { json } = require("stream/consumers");
 const axios = require('axios');
+const router = express.Router();
 
 let app = express();
 app.use(cors());
@@ -583,7 +584,7 @@ app.put('/reviews/:id', async (req, res) => {
 })
 
 
-app.post('/ai/correct-review', async (req, res) => {
+router.post('/ai/correct-review', async (req, res) => {
     const { comment } = req.body;
 
     try {
