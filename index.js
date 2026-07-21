@@ -455,7 +455,7 @@ app.get('/users/:id', async (req, res) => {
     try {
         const { id } = req.params
         const result = await client.query(
-            `SELECT id, email, role, profile_pic FROM users WHERE id = $1`, [id]
+            `SELECT id, email, role, profile_pic, first_name FROM users WHERE id = $1`, [id]
         )
         if (result.rows.length === 0) {
             return res.status(404).json({ error: "User not found" })
