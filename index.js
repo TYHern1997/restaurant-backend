@@ -527,6 +527,29 @@ app.post('/reviews/:id/images', async (req, res) => {
     }
 })
 
+app.get('/reviews/restaurant/:restaurant_id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { restaurant_id } = req.params;
+        const result = await client.query(`
+            SELECT reviews.*, 
+                   users.first_name,
+                   review_images.image_url
+            FROM reviews
+            JOIN users ON reviews.user_id = users.id
+            LEFT JOIN review_images ON reviews.id = review_images.review_id
+            WHERE reviews.restaurant_id = $1
+            ORDER BY reviews.created_at DESC
+        `, [restaurant_id]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 app.post('/reviews', async (req, res) => {
     const client = await pool.connect()
     try {
