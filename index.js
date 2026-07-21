@@ -539,7 +539,7 @@ app.get('/reviews/restaurant/:restaurant_id', async (req, res) => {
             JOIN users ON reviews.user_id = users.id
             LEFT JOIN review_images ON reviews.id = review_images.review_id
             WHERE reviews.restaurant_id = $1
-            ORDER BY reviews.created_at DESC
+            ORDER BY reviews.id,reviews.created_at DESC
         `, [restaurant_id]);
         res.json(result.rows);
     } catch (error) {
