@@ -585,6 +585,7 @@ app.put('/reviews/:id', async (req, res) => {
 
 app.post('/ai/correct-review', async (req, res) => {
     const { comment } = req.body;
+
     try {
         const response = await axios.post('https://api.anthropic.com/v1/messages', {
             model: 'claude-sonnet-4-6',
