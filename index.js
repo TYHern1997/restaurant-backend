@@ -583,6 +583,34 @@ app.put('/reviews/:id', async (req, res) => {
 })
 
 
+app.post('/ai/correct-review', async (req, res) => {
+    const { comment } = req.body;
+    try {
+        const response = await axios.post('https://api.anthropic.com/v1/messages', {
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1000,
+            messages: [
+                {
+                    role: 'user',
+                    content: `Fix the grammar and spelling of this restaurant review. Return only the corrected text, nothing else: "${comment}"`
+                }
+            ]
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01'
+            }
+        });
+
+        const corrected = response.data.content[0].text;
+        res.json({ corrected });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'AI correction failed' });
+    }
+});
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname + "/index.html"));
 });
