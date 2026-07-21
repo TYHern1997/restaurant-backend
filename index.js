@@ -487,11 +487,15 @@ app.get('/reviews/user/:user_id', async (req, res) => {
     try {
         const { user_id } = req.params;
         const result = await client.query(
-            `SELECT reviews.*, restaurants.name as restaurant_name, restaurants.location as restaurant_location
-       FROM reviews
-       JOIN restaurants ON reviews.restaurant_id = restaurants.id
-       WHERE reviews.user_id = $1
-       ORDER BY reviews.created_at DESC`,
+            `SELECT reviews.*, 
+                    restaurants.name as restaurant_name, 
+                    restaurants.location as restaurant_location,
+                    review_images.image_url
+             FROM reviews
+             JOIN restaurants ON reviews.restaurant_id = restaurants.id
+             LEFT JOIN review_images ON reviews.id = review_images.review_id
+             WHERE reviews.user_id = $1
+             ORDER BY reviews.created_at DESC`,
             [user_id]
         );
         res.json(result.rows);
