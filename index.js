@@ -461,7 +461,7 @@ app.get('/reviews/recent', async (req, res) => {
     const client = await pool.connect()
     try {
         const result = await client.query(`
-            SELECT reviews.*, 
+            SELECT DISTINCT ON (reviews.id) reviews.*, 
                    users.first_name, 
                    restaurants.name as restaurant_name,
                    review_images.image_url
@@ -469,7 +469,7 @@ app.get('/reviews/recent', async (req, res) => {
             JOIN users ON reviews.user_id = users.id
             JOIN restaurants ON reviews.restaurant_id = restaurants.id
             LEFT JOIN review_images ON reviews.id = review_images.review_id
-            ORDER BY reviews.created_at DESC
+            ORDER BY reviews.id, reviews.created_at DESC
             LIMIT 6
         `)
         res.json(result.rows)
