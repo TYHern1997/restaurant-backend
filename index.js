@@ -165,6 +165,8 @@ app.delete('/bookings/:id', async (req, res) => {
     const client = await pool.connect()
     try {
         const { id } = req.params
+
+        await client.query(`DELETE FROM reviews WHERE booking_id = $1`, [id])
         const result = await client.query(`DELETE FROM bookings WHERE id=$1 RETURNING *`, [id])
 
         if (result.rows.length === 0) {
