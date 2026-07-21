@@ -587,7 +587,10 @@ app.post('/ai/correct-review', async (req, res) => {
     const { comment } = req.body;
 
     try {
+
+        const cleanApiKey = (process.env.ANTHROPIC_API_KEY || "").replace(/\s+/g, "").trim();
         const response = await axios.post('https://api.anthropic.com/v1/messages', {
+
             model: 'claude-3-5-sonnet-20241022',
             max_tokens: 1000,
             messages: [
@@ -599,7 +602,7 @@ app.post('/ai/correct-review', async (req, res) => {
         }, {
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'x-api-key': cleanApiKey,
                 'anthropic-version': '2023-06-01'
             }
         });
