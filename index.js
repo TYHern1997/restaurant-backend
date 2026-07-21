@@ -532,7 +532,7 @@ app.get('/reviews/restaurant/:restaurant_id', async (req, res) => {
     try {
         const { restaurant_id } = req.params;
         const result = await client.query(`
-            SELECT reviews.*, 
+            SELECT DISTINCT ON (reviews.id) reviews.*, 
                    users.first_name,
                    review_images.image_url
             FROM reviews
