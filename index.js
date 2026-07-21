@@ -588,34 +588,27 @@ app.post('/ai/correct-review', async (req, res) => {
     const { comment } = req.body;
 
     try {
-
-        const cleanApiKey = (process.env.ANTHROPIC_API_KEY || "").replace(/\s+/g, "").trim();
-        const response = await axios.post('https://api.anthropic.com/v1/messages', {
-
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 1000,
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-3.5-turbo',
             messages: [
                 {
                     role: 'user',
                     content: `Fix the grammar and spelling of this restaurant review. Return only the corrected text, nothing else: "${comment}"`
                 }
-            ]
+            ],
+            max_tokens: 1000
         }, {
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': cleanApiKey,
-                'anthropic-version': '2023-06-01'
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             }
         });
 
-        const corrected = response.data.content[0].text;
+        const corrected = response.data.choices[0].message.content;
         res.json({ corrected });
     } catch (error) {
-        console.error("FULL ANTHROPIC ERROR:", JSON.stringify(error.response?.data || error.message, null, 2));
-        res.status(500).json({
-            error: "Failed to correct text",
-            details: error.response?.data?.error || error.message
-        })
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'AI correction failed' });
     }
 });
 
