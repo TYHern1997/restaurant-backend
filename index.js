@@ -607,8 +607,11 @@ app.post('/ai/correct-review', async (req, res) => {
         const corrected = response.data.content[0].text;
         res.json({ corrected });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'AI correction failed' });
+        console.error("FULL ANTHROPIC ERROR:", JSON.stringify(error.response?.data || error.message, null, 2));
+        res.status(500).json({
+            error: "Failed to correct text",
+            details: error.response?.data?.error || error.message
+        })
     }
 });
 
