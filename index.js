@@ -267,7 +267,13 @@ app.post('/signup', async (req, res) => {
 app.get('/restaurants', async (req, res) => {
     const client = await pool.connect()
     try {
-        const result = await client.query(`SELECT * FROM restaurants`)
+        const result = await client.query(`SELECT restaurants.*,
+            ROUND(AVG(reviews.rating), 1) as avg_rating,
+            COUNT(reviews.id) as review_count
+            From restaurants
+            LEFT JOIN reviews ON restaurants.id = reviews.restaurant_id
+            GROUP BY restaurants.id
+            `)
         res.json(result.rows)
     } catch (error) {
         console.error(error);
