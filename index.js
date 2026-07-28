@@ -287,7 +287,7 @@ app.post('/restaurants', async (req, res) => {
     const client = await pool.connect()
     try {
 
-        const { name, cuisine_type, capacity, location, menu_url } = req.body
+        const { name, cuisine_type, capacity, location, menu_url, image_url } = req.body
 
         const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
             params: {
@@ -306,7 +306,7 @@ app.post('/restaurants', async (req, res) => {
 
         const result = await client.query(
             'INSERT INTO restaurants (name, cuisine_type, capacity, location,lat,lng, menu_url) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, cuisine_type, capacity, location, lat, lng, menu_url]
+            [name, cuisine_type, capacity, location, lat, lng, menu_url, image_url]
         )
         res.json(result.rows[0])
     } catch (error) {
@@ -330,7 +330,7 @@ app.put('/restaurants/:id', async (req, res) => {
             return res.status(403).json({ error: 'Admin Access only' })
         }
 
-        const { name, cuisine_type, capacity, location, menu_url } = req.body
+        const { name, cuisine_type, capacity, location, menu_url, image_url } = req.body
         const { id } = req.params
 
         const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
@@ -351,7 +351,7 @@ app.put('/restaurants/:id', async (req, res) => {
 
         const result = await client.query(
             `UPDATE restaurants SET name= $1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7 WHERE id = $8 RETURNING*`,
-            [name, cuisine_type, capacity, location, lat, lng, menu_url, id]
+            [name, cuisine_type, capacity, location, lat, lng, menu_url, image_url, id]
         )
 
         if (result.rows.length === 0) {
