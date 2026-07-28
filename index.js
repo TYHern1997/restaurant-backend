@@ -350,7 +350,7 @@ app.put('/restaurants/:id', async (req, res) => {
 
 
         const result = await client.query(
-            `UPDATE restaurants SET name= $1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7 WHERE id = $8 RETURNING*`,
+            `UPDATE restaurants SET name=$1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7, image_url=$8 WHERE id=$9 RETURNING *`,
             [name, cuisine_type, capacity, location, lat, lng, menu_url, image_url, id]
         )
 
