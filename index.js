@@ -305,7 +305,7 @@ app.post('/restaurants', async (req, res) => {
 
 
         const result = await client.query(
-            'INSERT INTO restaurants (name, cuisine_type, capacity, location,lat,lng, menu_url) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            'INSERT INTO restaurants (name, cuisine_type, capacity, location,lat,lng, menu_url,image_url) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [name, cuisine_type, capacity, location, lat, lng, menu_url, image_url]
         )
         res.json(result.rows[0])
