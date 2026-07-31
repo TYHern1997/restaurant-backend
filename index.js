@@ -366,24 +366,6 @@ app.put('/restaurants/:id', async (req, res) => {
     }
 })
 
-// app.delete('/restaurants/:id', async (req, res) => {
-//     const client = await pool.connect()
-//     try {
-//         const { id } = req.params
-//         const result = await client.query(`DELETE FROM restaurants WHERE id=$1 RETURNING *`, [id])
-
-//         if (result.rows.length === 0) {
-//             return res.status(404).json({ error: "Restaurant not found" });
-//         }
-//         res.json({ "status": "success", "message": "bookings successfully deleted" })
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: "Internal server error" });
-//     } finally {
-//         if (client) client.release();
-//     }
-// })
-
 
 app.get('/admin/users', async (req, res) => {
     const client = await pool.connect();
@@ -499,6 +481,23 @@ app.get('/reviews/recent', async (req, res) => {
     }
 })
 
+app.get('/reviews/:id/images', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const { id } = req.params
+        const result = await client.query(
+            'SELECT * FROM review_images WHERE review_id = $1 ORDER BY created_at ASC',
+            [id]
+        );
+
+        res.json(result.rows)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
 
 app.get('/reviews/user/:user_id', async (req, res) => {
     const client = await pool.connect();
@@ -524,6 +523,8 @@ app.get('/reviews/user/:user_id', async (req, res) => {
         if (client) client.release();
     }
 });
+
+
 
 
 app.post('/reviews/:id/images', async (req, res) => {
@@ -592,6 +593,26 @@ app.put('/reviews/:id', async (req, res) => {
         const { rating, comment } = req.body
         const result = await client.query('UPDATE reviews SET rating= $1, comment = $2 WHERE id = $3 RETURNING *', [rating, comment, id])
         res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
+app.delete('/reviews_images/:id', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const { id } = req.params
+        const result = await client.query(
+            'DELETE FROM review_images WHERE id=$1 RETURNING*', [id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Image not found" })
+        }
+        res.json({ message: 'Image deleted successfully' })
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal server error" });
