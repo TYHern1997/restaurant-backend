@@ -551,15 +551,21 @@ app.get('/reviews/restaurant/:restaurant_id', async (req, res) => {
     try {
         const { restaurant_id } = req.params;
         const result = await client.query(`
-            SELECT DISTINCT ON (reviews.id) reviews.*, 
-                   users.first_name,
-                   review_images.image_url
+             SELECT reviews.*, 
+           users.first_name,
+           COALESCE(
+               json_agg(
+                   json_build_object('id', review_images.id, 'image_url', review_images.image_url)
+               ) FILTER (WHERE review_images.id IS NOT NULL),
+               '[]'
+           ) as images
             FROM reviews
-            JOIN users ON reviews.user_id = users.id
-            LEFT JOIN review_images ON reviews.id = review_images.review_id
-            WHERE reviews.restaurant_id = $1
-            ORDER BY reviews.id,reviews.created_at DESC
-        `, [restaurant_id]);
+    JOIN users ON reviews.user_id = users.id
+    LEFT JOIN review_images ON reviews.id = review_images.review_id
+    WHERE reviews.restaurant_id = $1
+    GROUP BY reviews.id, users.first_name
+    ORDER BY reviews.created_at DESC
+`, [restaurant_id]);
         res.json(result.rows);
     } catch (error) {
         console.error(error);
