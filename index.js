@@ -231,7 +231,9 @@ app.post('/login', async (req, res) => {
 
 app.post('/signup', async (req, res) => {
     const client = await pool.connect()
-    const { email, password, first_name, last_name, birthday, phone_number } = req.body
+    const { email, password, first_name, last_name, birthday, phone_number, role } = req.body
+    const allowedRoles = ['user', 'owner'];
+    const finalRole = allowedRoles.includes(role) ? role : 'user';
 
     try {
 
@@ -240,15 +242,16 @@ app.post('/signup', async (req, res) => {
         }
 
         const hashPass = await bcrypt.hash(password, 10)
-        const result = await client.query(`INSERT INTO users(email, password, first_name, last_name, birthday, phone_number) 
-            VALUES ($1, $2, $3, $4, $5, $6) 
-            RETURNING id, email, first_name, last_name, birthday, phone_number`, [
+        const result = await client.query(`INSERT INTO users(email, password, first_name, last_name, birthday, phone_number, role) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7) 
+            RETURNING id, email, first_name, last_name, birthday, phone_number, role`, [
             email,
             hashPass,
             first_name || null,
             last_name || null,
             birthday || null,
-            phone_number || null
+            phone_number || null,
+            finalRole
         ])
 
         res.json(result.rows[0])
