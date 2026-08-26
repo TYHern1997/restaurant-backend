@@ -361,6 +361,29 @@ app.post('/restaurants/request', async (req, res) => {
     }
 })
 
+app.get('/restaurant/mine', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        if (decoded.role !== 'owner') {
+            return res.status(403).json({ error: 'Restaurant owner access only' })
+        }
+
+        const result = await client.query(
+            `SELECT * FROM restaurants WHERE owner_id = $1`,
+            [decoded.id]
+        )
+        res.json(result.rows[0] || null)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
 
 app.put('/restaurants/:id', async (req, res) => {
     const client = await pool.connect()
