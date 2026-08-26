@@ -361,7 +361,7 @@ app.post('/restaurants/request', async (req, res) => {
     }
 })
 
-app.get('/restaurant/mine', async (req, res) => {
+app.get('/restaurants/mine', async (req, res) => {
     const client = await pool.connect()
     try {
         const token = req.headers.authorization?.split(' ')[1];
