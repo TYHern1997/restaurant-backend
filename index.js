@@ -384,6 +384,53 @@ app.get('/restaurants/mine', async (req, res) => {
     }
 })
 
+app.put('/restaurants/mine', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        if (decoded.role !== 'owner') {
+            return res.status(403).json({ error: 'Restaurant owner access only' })
+        }
+
+        const { name, cuisine_type, capacity, location, menu_url, image_url, price_range } = req.body
+
+        const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+            params: {
+                q: location,
+                format: 'json',
+                limit: 1
+            },
+            headers: {
+                'User-Agent': 'SigmaServe/1.0'
+            }
+        })
+
+        const lat = geoRes.data[0]?.lat || null
+        const lng = geoRes.data[0]?.lon || null
+
+        const result = await client.query(
+            `UPDATE restaurants
+             SET name=$1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7, image_url=$8, price_range=$9
+             WHERE owner_id=$10
+             RETURNING *`,
+            [name, cuisine_type, capacity, location, lat, lng, menu_url, image_url, price_range, decoded.id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'No restaurant found for this owner' })
+        }
+
+        res.json(result.rows[0])
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
 
 app.put('/restaurants/:id', async (req, res) => {
     const client = await pool.connect()
