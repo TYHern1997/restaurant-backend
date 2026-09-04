@@ -479,6 +479,66 @@ app.put('/restaurants/:id', async (req, res) => {
     }
 })
 
+app.get('/admin/restaurant-requests', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access only' })
+        }
+
+        const result = await client.query(
+            `SELECT restaurants.*, users.email AS owner_email
+             FROM restaurants
+             JOIN users ON restaurants.owner_id = users.id
+             WHERE restaurants.status = 'pending'`
+        )
+        res.json(result.rows)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
+app.put('/admin/restaurant-requests/:id', async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access only' })
+        }
+
+        const { id } = req.params;
+        const { status } = req.body; // 'approved' or 'rejected'
+
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' })
+        }
+
+        const result = await client.query(
+            `UPDATE restaurants SET status=$1 WHERE id=$2 RETURNING *`,
+            [status, id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Restaurant not found' })
+        }
+
+        res.json(result.rows[0])
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    } finally {
+        if (client) client.release();
+    }
+})
+
 
 app.get('/admin/users', async (req, res) => {
     const client = await pool.connect();
