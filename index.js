@@ -275,6 +275,7 @@ app.get('/restaurants', async (req, res) => {
             COUNT(reviews.id) as review_count
             From restaurants
             LEFT JOIN reviews ON restaurants.id = reviews.restaurant_id
+            WHERE restaurants.status = 'approved'
             GROUP BY restaurants.id
             `)
         res.json(result.rows)
