@@ -413,9 +413,10 @@ app.put('/restaurants/mine', async (req, res) => {
 
         const result = await client.query(
             `UPDATE restaurants
-             SET name=$1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7, image_url=$8, price_range=$9
-             WHERE owner_id=$10
-             RETURNING *`,
+     SET name=$1, cuisine_type=$2, capacity=$3, location=$4, lat=$5, lng=$6, menu_url=$7, image_url=$8, price_range=$9,
+         status = CASE WHEN status = 'rejected' THEN 'pending' ELSE status END
+     WHERE owner_id=$10
+     RETURNING *`,
             [name, cuisine_type, capacity, location, lat, lng, menu_url, image_url, price_range, decoded.id]
         )
 
